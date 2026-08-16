@@ -47,7 +47,7 @@ elseif(${CMAKE_SYSTEM_NAME} MATCHES "rtems")
   set(BUILD_TESTS FALSE)
 endif()
 
-message("OS is ${OS}")
+message(STATUS "OS is ${OS}")
 
 
 set(soem_rsl_INCLUDE_INSTALL_DIR include/soem_rsl)
@@ -81,7 +81,7 @@ file(GLOB soem_rsl_HEADERS soem_rsl/soem_rsl/*.h)
 file(GLOB OSAL_HEADERS soem_rsl/osal/osal.h soem_rsl/osal/${OS}/*.h)
 file(GLOB OSHW_HEADERS soem_rsl/oshw/${OS}/*.h)
 
-message(${OSAL_HEADERS})
+message(STATUS "OSAL headers: ${OSAL_HEADERS}")
 
 add_library(soem_rsl STATIC
   ${soem_rsl_SOURCES}
@@ -107,7 +107,7 @@ target_include_directories(soem_rsl
   PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/soem_rsl/oshw/${OS}>
   $<INSTALL_INTERFACE:include/soem_rsl/soem_rsl>)
 
-message("LIB_DIR: ${soem_rsl_LIB_INSTALL_DIR}")
+message(STATUS "LIB_DIR: ${soem_rsl_LIB_INSTALL_DIR}")
 
 if("$ENV{ROS_VERSION}" STREQUAL "1")
   install(TARGETS soem_rsl EXPORT soem_rslConfig DESTINATION ${soem_rsl_LIB_INSTALL_DIR})
