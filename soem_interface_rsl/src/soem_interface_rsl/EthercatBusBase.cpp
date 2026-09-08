@@ -261,7 +261,9 @@ struct EthercatBusBaseTemplateAdapter::EthercatSlaveBaseImpl {
     }
     sentProcessData_ = false;
 
-    int expectedWorkingCounter = ecatContext_.grouplist[0].outputsWKC * 2 + ecatContext_.grouplist[0].inputsWKC;
+    const auto& group = ecatContext_.grouplist[0];
+    int expectedWorkingCounter = group.blockLRW ? group.outputsWKC + group.inputsWKC
+                                                 : group.outputsWKC * 2 + group.inputsWKC;
     //! Check the working counter.
     if (wkc_ < expectedWorkingCounter) {
       ++workingCounterTooLowCounter_;
