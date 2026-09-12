@@ -381,15 +381,12 @@ struct EthercatBusBaseTemplateAdapter::EthercatSlaveBaseImpl {
     bool allFine = true;
     busDiagnosisLog_.fullyUpdated = false;
     BusDiagState nextBusDiagState{BusDiagState::StateReading};
-    MELO_DEBUG_STREAM("[DriveManager::DoBusMonitoring::" << name_ << "] Running Bus Monitoring/Diagnosis")
 
     if (busDiagState_ == BusDiagState::StateReading) {
       if (logErrorCounterForDiagnosis) {
         nextBusDiagState = BusDiagState::CounterReading;
       }
       // read all the states from all slaves.
-      MELO_DEBUG_STREAM("[DriveManager::DoBusMonitoring::" << name_ << "] Running Bus Monitoring/Diagnosis State/AlstatusCode")
-
       int lowestSlaveState = getState(0);  // one datagram iff all slaves in the same state, otherwise one datagram per slave.
 
       // can we do more than looking on the state machine? error counters would be interessting but needs very raw register reads, but
