@@ -109,11 +109,13 @@ struct EthercatBusBaseTemplateAdapter::EthercatSlaveBaseImpl {
                               << "No socket connection. Execute as root.");
         return false;
       }
+      socketOpen_ = true;
       for (int retry = 0; retry <= maxDiscoverRetries; retry++) {
         if (abortFlag) {
           MELO_WARN_STREAM("[soem_interface_rsl::" << name_ << "] "
                                                    << "Shutdown during waiting for slaves.");
           ecx_close(&ecatContext_);
+          socketOpen_ = false;
           return false;  // avoid that executation continues.
         }
         if (ecx_detect_slaves(&ecatContext_) >= static_cast<int>(slaves_.size())) {
@@ -126,6 +128,7 @@ struct EthercatBusBaseTemplateAdapter::EthercatSlaveBaseImpl {
           MELO_ERROR_STREAM("[soem_interface_rsl::" << name_ << "] "
                                                     << "No slaves have been found.");
           ecx_close(&ecatContext_);
+          socketOpen_ = false;
           return false;
         }
         // Sleep and retry.
@@ -137,6 +140,7 @@ struct EthercatBusBaseTemplateAdapter::EthercatSlaveBaseImpl {
       // this should no work cleanly, since we're sure that all slaves are started.
       if (ecx_config_init(&ecatContext_, FALSE) < static_cast<int>(slaves_.size())) {
         ecx_close(&ecatContext_);
+        socketOpen_ = false;
         MELO_ERROR_STREAM("[soem_interface_rsl::" << name_ << "] "
                                                   << "No slaves have been found.");
         return false;
@@ -168,6 +172,7 @@ struct EthercatBusBaseTemplateAdapter::EthercatSlaveBaseImpl {
       }
       if (!slaveAddressesAreOk) {
         ecx_close(&ecatContext_);
+        socketOpen_ = false;
         return false;
       }
 
@@ -330,13 +335,15 @@ struct EthercatBusBaseTemplateAdapter::EthercatSlaveBaseImpl {
 
     // Close the port.
     std::lock_guard<std::mutex> guard(contextMutex_);
-    if (ecatContext_.port != nullptr) {
+    if (socketOpen_) {
       MELO_INFO_STREAM("[soem_interface_rsl::" << name_ << "] Closing socket ...");
       ecx_close(&ecatContext_);
+      socketOpen_ = false;
       // Sleep to make sure the socket is closed, because ecx_close is non-blocking.
       soem_interface_rsl::threadSleep(0.5);
     }
     initlialized_ = false;
+    sentProcessData_ = false;
   }
 
   void setState(const uint16_t state, const uint16_t slave = 0) {
@@ -783,6 +790,7 @@ struct EthercatBusBaseTemplateAdapter::EthercatSlaveBaseImpl {
 
   //! Whether the bus has been initialized successfully
   bool initlialized_{false};
+  bool socketOpen_{false};
 
   //! List of slaves.
   std::vector<EthercatSlaveBasePtr> slaves_;
@@ -968,7 +976,6 @@ void EthercatBusBase::updateWrite() {
 
 void EthercatBusBase::shutdown() {
   pImpl_->shutdown();
-  pImpl_.reset(nullptr);
 }
 
 void EthercatBusBase::setState(const uint16_t state, const uint16_t slave) {
